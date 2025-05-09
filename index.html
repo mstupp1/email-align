@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Aligner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #1a202c; /* Dark background */
+            color: #a0aec0; /* Light gray text */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling */
+            padding: 20px; /* Add some padding */
+            box-sizing: border-box;
+        }
+
+        #game-container {
+            background-color: #2d3748; /* Slightly lighter dark */
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            max-width: 95%; /* Responsive width */
+            width: 900px; /* Increased max width significantly */
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #48bb78; /* Green */
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px #222;
+        }
+
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        button {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #4299e1; /* Blue */
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #3182ce; /* Darker blue */
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        #start-menu, #game-area, #end-screen {
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #start-menu.active, #game-area.active, #end-screen.active {
+            display: flex;
+        }
+
+        #game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        #score, #timer {
+            font-size: 1.2em;
+            color: #f6e05e; /* Yellow */
+        }
+
+        #email-display {
+            width: 100%;
+            background-color: #fff; /* White email background */
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            position: relative;
+            margin-bottom: 20px;
+            user-select: none; /* Prevent text selection */
+            min-height: 400px; /* Ensure enough height for body + parts */
+            display: flex; /* Use flexbox to center inner content */
+            flex-direction: column;
+            align-items: center; /* Center items horizontally */
+        }
+
+        #email-inner-container {
+            width: 100%; /* Take full width of parent initially */
+            max-width: 600px; /* Increased max width for the inner content */
+            background-color: #edf2f7; /* Light gray background for inner body */
+            padding: 20px;
+            box-sizing: border-box;
+            flex-grow: 1; /* Allow it to grow and fill space */
+            margin-top: 80px; /* Space for header */
+            margin-bottom: 80px; /* Space for footer */
+            text-align: left;
+            color: #2d3748;
+            line-height: 1.5;
+        }
+
+
+        .email-part {
+            width: 600px; /* Match max-width of inner container */
+            height: 80px; /* Fixed height for header/footer */
+            position: absolute;
+            top: 0;
+            transition: background-color 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            color: #2d3748; /* Darker text color for better contrast */
+            font-weight: bold;
+            box-sizing: border-box; /* Include padding/border in element's total width/height */
+             /* Default colors */
+            background-color: #cbd5e0; /* Light gray default */
+        }
+
+        #email-header {
+            top: 0;
+        }
+
+        #email-footer {
+            bottom: 0;
+            top: auto; /* Override top: 0 */
+            visibility: hidden; /* Initially hidden */
+        }
+
+        #email-body-content {
+             /* This div is now inside #email-inner-container */
+             margin-bottom: 15px;
+             background-color: #fff; /* White background for content blocks */
+             padding: 10px;
+             border-radius: 5px;
+        }
+
+        #email-body-content h3 {
+            margin-top: 0;
+            color: #2d3748;
+            font-size: 1.1em;
+        }
+
+        #email-body-content p {
+            margin-bottom: 0;
+            font-size: 0.9em;
+            color: #4a5568;
+        }
+
+        /* Removed .aligned background-color here */
+
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 2em;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #a0aec0;
+            font-size: 0.5em; /* Make text smaller */
+        }
+
+        .control-icon {
+            font-size: 2em; /* Icon size */
+            margin-bottom: 5px;
+        }
+
+        #tap-button {
+            font-family: 'Press Start 2P', cursive;
+            background-color: #ed8936; /* Orange */
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+            margin-top: 20px;
+        }
+
+        #tap-button:hover {
+            background-color: #dd6b20; /* Darker orange */
+        }
+
+        #tap-button:active {
+            transform: scale(0.98);
+        }
+
+
+        #end-screen h2 {
+            color: #48bb78;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+
+        #final-score {
+            font-size: 1.8em;
+            color: #f6e05e;
+            margin-bottom: 10px;
+        }
+
+        #rank {
+            font-size: 1.5em;
+            color: #4299e1;
+            margin-bottom: 20px;
+        }
+
+        #completed-emails-preview {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+            max-height: 200px; /* Limit height */
+            overflow-y: auto; /* Add scroll if needed */
+            padding: 10px;
+            background-color: #1a202c;
+            border-radius: 8px;
+        }
+
+        .completed-email-thumbnail {
+            width: 80px; /* Thumbnail size */
+            height: 120px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0; /* Prevent shrinking */
+             display: flex; /* Use flexbox for thumbnail content */
+             flex-direction: column;
+             align-items: center;
+        }
+
+        .completed-email-thumbnail .email-part {
+            height: 20px; /* Smaller parts */
+            font-size: 0.5em;
+             /* Adjust width for thumbnail */
+            width: 80%; /* Keep proportional width */
+             position: relative; /* Change from absolute for flow */
+             top: auto;
+             bottom: auto;
+        }
+
+        .completed-email-thumbnail .email-inner-container {
+             width: 100%;
+             max-width: 90%; /* Smaller max-width for thumbnail inner */
+             background-color: #edf2f7;
+             padding: 5px;
+             flex-grow: 1;
+             margin: 0; /* Remove margins */
+             text-align: left;
+             color: #2d3748;
+             line-height: 1.2;
+             font-size: 0.4em; /* Smaller font size */
+             overflow: hidden; /* Hide overflow text */
+        }
+
+
+        .completed-email-thumbnail #email-body-content {
+             margin-bottom: 5px;
+             padding: 3px;
+             background-color: #fff;
+        }
+         .completed-email-thumbnail #email-body-content h3 {
+            font-size: 0.6em;
+         }
+         .completed-email-thumbnail #email-body-content p {
+            font-size: 0.4em;
+         }
+
+
+        /* Message Box for game messages */
+        #message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 100;
+            display: none;
+            font-size: 1.5em;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) { /* Adjust breakpoint for wider game */
+             #game-container {
+                width: 90%; /* Allow it to shrink on smaller screens */
+             }
+             .email-part {
+                 width: 80%; /* Adjust part width on smaller screens */
+             }
+        }
+
+        @media (max-width: 600px) {
+            #game-container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+            }
+
+            #score, #timer {
+                font-size: 1em;
+            }
+
+            #controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .control-icon {
+                font-size: 1.5em;
+            }
+
+            #tap-button {
+                padding: 12px 25px;
+                font-size: 1em;
+            }
+
+            #end-screen h2 {
+                font-size: 1.2em;
+            }
+
+            #final-score {
+                font-size: 1.5em;
+            }
+
+            #rank {
+                font-size: 1.2em;
+            }
+
+            .completed-email-thumbnail {
+                 width: 60px;
+                 height: 90px;
+            }
+             .completed-email-thumbnail .email-part {
+                height: 15px;
+             }
+            .completed-email-thumbnail .email-inner-container {
+                min-height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-menu" class="active">
+            <h1>Email Aligner</h1>
+            <p>The marketing team is on a tight deadline! Help update email headers and footers.</p>
+            <p>Align the header and footer by hitting the button or Spacebar when they are centered over the email body.</p>
+            <button id="start-button">Start Mission</button>
+            <div id="controls">
+                <div class="control-item">
+                    <div class="control-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                            <path d="M3 15H21V17H3V15ZM3 19H21V21H3V19ZM3 11H21V13H3V11ZM3 7H21V9H3V7ZM3 3H21V5H3V3Z" opacity=".3"></path>
+                            <path d="M18 15V17H6V15H18ZM18 19V21H6V19H18ZM18 11V13H6V11H18ZM18 7V9H6V7H18ZM18 3V5H6V3H18Z"></path>
+                        </svg>
+                    </div>
+                    Spacebar
+                </div>
+                 <div class="control-item">
+                    <div class="control-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20ZM12 6C9.79 6 8 7.79 8 10C8 12.21 9.79 14 12 14C14.21 14 16 12.21 16 10C16 7.79 14.21 6 12 6ZM12 12C10.9 12 10 11.1 10 10C10 8.9 10.9 8 12 8C13.1 8 14 8.9 14 10C14 11.1 13.1 12 12 12Z"></path>
+                        </svg>
+                    </div>
+                    Tap
+                </div>
+            </div>
+        </div>
+
+        <div id="game-area">
+            <div id="game-info">
+                <div id="score">Score: 0</div>
+                <div id="timer">Time: 30</div>
+            </div>
+            <div id="email-display">
+                <div id="email-header" class="email-part">Header</div>
+                <div id="email-inner-container">
+                    <div id="email-body-content">
+                    </div>
+                </div>
+                <div id="email-footer" class="email-part">Footer</div>
+            </div>
+             <button id="tap-button">ALIGN!</button>
+        </div>
+
+        <div id="end-screen">
+            <h2>Mission Complete!</h2>
+            <p id="final-score">Final Score: 0</p>
+            <p id="rank">Rank: Rookie</p>
+            <h3>Completed Emails:</h3>
+            <div id="completed-emails-preview">
+                </div>
+            <button id="restart-button">Restart</button>
+        </div>
+
+        <div id="message-box"></div>
+
+    </div>
+
+    <script>
+        const startMenu = document.getElementById('start-menu');
+        const gameArea = document.getElementById('game-area');
+        const endScreen = document.getElementById('end-screen');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const emailDisplay = document.getElementById('email-display');
+        const emailHeader = document.getElementById('email-header');
+        const emailFooter = document.getElementById('email-footer');
+        const emailInnerContainer = document.getElementById('email-inner-container'); // New inner container
+        const emailBodyContent = document.getElementById('email-body-content'); // Content inside inner container
+        const tapButton = document.getElementById('tap-button');
+        const messageBox = document.getElementById('message-box');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const rankDisplay = document.getElementById('rank');
+        const completedEmailsPreview = document.getElementById('completed-emails-preview');
+
+        let score = 0;
+        let timeLeft = 30;
+        let timerInterval;
+        let animationFrameId;
+        let headerPosition = 0; // Horizontal position (pixels)
+        let footerPosition = 0; // Horizontal position (pixels)
+        let headerDirection = 1; // 1 for right, -1 for left
+        let footerDirection = 1;
+        let oscillationSpeed = 3; // Increased speed for wider area
+        let speedIncreaseRate = 0.15; // Increased speed increase rate
+        let currentPart = 'header'; // 'header' or 'footer'
+        let headerAligned = false;
+        let footerAligned = false;
+        let completedEmails = [];
+
+        const emailBodyTemplates = [
+            `
+                <div id="email-body-content">
+                    <h3>Special Offer Just For You!</h3>
+                    <p>Don't miss out on our limited-time discount on all products. Shop now and save big!</p>
+                </div>
+                <div id="email-body-content">
+                    <h3>New Arrivals This Week</h3>
+                    <p>Check out the latest additions to our collection. Fresh styles just dropped!</p>
+                </div>
+            `,
+            `
+                <div id="email-body-content">
+                    <h3>Your Weekly Newsletter</h3>
+                    <p>Stay updated with our latest news, tips, and exclusive content delivered right to your inbox.</p>
+                </div>
+                 <div id="email-body-content">
+                    <h3>Upcoming Events</h3>
+                    <p>Join us for our next online workshop. Learn valuable skills from industry experts.</p>
+                </div>
+            `,
+             `
+                <div id="email-body-content">
+                    <h3>Thank You For Your Order!</h3>
+                    <p>We appreciate your business. Your order is being processed and will ship soon.</p>
+                </div>
+                 <div id="email-body-content">
+                    <h3>Leave a Review</h3>
+                    <p>Tell us about your experience! Your feedback helps us improve.</p>
+                </div>
+            `,
+             `
+                <div id="email-body-content">
+                    <h3>Exclusive Content Unlocked!</h3>
+                    <p>As a valued subscriber, you now have access to premium articles and videos.</p>
+                </div>
+                 <div id="email-body-content">
+                    <h3>Your Account Summary</h3>
+                    <p>A quick overview of your recent activity and account details.</p>
+                </div>
+            `,
+             `
+                <div id="email-body-content">
+                    <h3>We Miss You!</h3>
+                    <p>It's been a while. Come back and see what's new. Here's a special discount!</p>
+                </div>
+                 <div id="email-body-content">
+                    <h3>Important Service Update</h3>
+                    <p>Information regarding recent changes to our service. Please read carefully.</p>
+                </div>
+            `,
+        ];
+
+        // Function to show a message box
+        function showMessage(msg, duration = 1000) {
+            messageBox.textContent = msg;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, duration);
+        }
+
+        // Function to get a random email body template
+        function getRandomEmailBody() {
+            const randomIndex = Math.floor(Math.random() * emailBodyTemplates.length);
+            return emailBodyTemplates[randomIndex];
+        }
+
+        // Function to update the email body content
+        function updateEmailBody() {
+            emailInnerContainer.innerHTML = getRandomEmailBody(); // Insert into the inner container
+        }
+
+        // Animation loop
+        function animate() {
+            const containerWidth = emailDisplay.offsetWidth;
+            const headerWidth = emailHeader.offsetWidth;
+            const footerWidth = emailFooter.offsetWidth;
+
+            const maxHeaderPosition = containerWidth - headerWidth;
+            const maxFooterPosition = containerWidth - footerWidth;
+
+
+            // Update header position if not aligned
+            if (!headerAligned) {
+                headerPosition += oscillationSpeed * headerDirection;
+                // Check boundaries
+                if (headerPosition >= maxHeaderPosition) {
+                    headerDirection = -1; // Reverse direction
+                     headerPosition = maxHeaderPosition; // Clamp position
+                } else if (headerPosition <= 0) {
+                     headerDirection = 1; // Reverse direction
+                     headerPosition = 0; // Clamp position
+                }
+                emailHeader.style.left = headerPosition + 'px';
+            }
+
+            // Update footer position if not aligned
+            if (!footerAligned) {
+                 footerPosition += oscillationSpeed * footerDirection;
+                 // Check boundaries
+                if (footerPosition >= maxFooterPosition) {
+                    footerDirection = -1; // Reverse direction
+                     footerPosition = maxFooterPosition; // Clamp position
+                } else if (footerPosition <= 0) {
+                    footerDirection = 1; // Reverse direction
+                     footerPosition = 0; // Clamp position
+                }
+                emailFooter.style.left = footerPosition + 'px';
+            }
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // Function to calculate alignment score and return accuracy level
+        function calculateAlignmentAccuracy(partElement) {
+            const innerContainerRect = emailInnerContainer.getBoundingClientRect();
+            const partRect = partElement.getBoundingClientRect();
+
+            const innerContainerCenterX = innerContainerRect.left + innerContainerRect.width / 2;
+            const partCenterX = partRect.left + partRect.width / 2;
+
+            const distance = Math.abs(partCenterX - innerContainerCenterX);
+
+            // Define thresholds for accuracy (more forgiving)
+            const perfectThreshold = 10; // Increased pixels from center for perfect
+            const closeThreshold = 40; // Increased pixels from center for close
+
+            if (distance <= perfectThreshold) {
+                return 'perfect'; // Green
+            } else if (distance <= closeThreshold) {
+                return 'close'; // Yellow
+            } else {
+                return 'off'; // Red
+            }
+        }
+
+        // Function to get score based on accuracy
+        function getScoreFromAccuracy(accuracy) {
+            switch (accuracy) {
+                case 'perfect': return 300; // High score for perfect
+                case 'close': return 150; // Medium score for close
+                case 'off': return 50; // Low score for off
+                default: return 0;
+            }
+        }
+
+        // Function to get message based on accuracy
+        function getMessageFromAccuracy(partName, accuracy, points) {
+             switch (accuracy) {
+                case 'perfect': return `${partName} Aligned Perfectly! +${points} points!`;
+                case 'close': return `Great ${partName} Alignment! +${points} points!`;
+                case 'off': return `Good Effort on ${partName}! +${points} points!`;
+                default: return `Aligned ${partName}! +${points} points!`;
+            }
+        }
+
+
+        // Function to handle alignment attempt
+        function attemptAlign() {
+            if (timeLeft <= 0) return; // Don't allow alignment after time is up
+
+            if (currentPart === 'header' && !headerAligned) {
+                const accuracy = calculateAlignmentAccuracy(emailHeader);
+                const alignmentScore = getScoreFromAccuracy(accuracy);
+                score += alignmentScore;
+                scoreDisplay.textContent = `Score: ${score}`;
+                headerAligned = true;
+
+                // Set color based on accuracy
+                if (accuracy === 'perfect') {
+                    emailHeader.style.backgroundColor = '#48bb78'; // Green
+                } else if (accuracy === 'close') {
+                    emailHeader.style.backgroundColor = '#f6e05e'; // Yellow
+                } else {
+                    emailHeader.style.backgroundColor = '#fc8181'; // Red
+                }
+
+                showMessage(getMessageFromAccuracy('Header', accuracy, alignmentScore), 1000);
+                currentPart = 'footer'; // Move to footer
+                emailFooter.style.visibility = 'visible'; // Make footer visible
+
+            } else if (currentPart === 'footer' && !footerAligned) {
+                const accuracy = calculateAlignmentAccuracy(emailFooter);
+                 const alignmentScore = getScoreFromAccuracy(accuracy);
+                score += alignmentScore;
+                scoreDisplay.textContent = `Score: ${score}`;
+                footerAligned = true;
+
+                 // Set color based on accuracy
+                if (accuracy === 'perfect') {
+                    emailFooter.style.backgroundColor = '#48bb78'; // Green
+                } else if (accuracy === 'close') {
+                    emailFooter.style.backgroundColor = '#f6e05e'; // Yellow
+                } else {
+                    emailFooter.style.backgroundColor = '#fc8181'; // Red
+                }
+
+                showMessage(getMessageFromAccuracy('Footer', accuracy, alignmentScore), 1000);
+
+                // Both aligned, move to next email
+                 setTimeout(nextEmail, 1200); // Slightly longer delay to read message
+
+            }
+        }
+
+        // Function to move to the next email
+        function nextEmail() {
+             // Save completed email state for preview
+            completedEmails.push({
+                headerColor: emailHeader.style.backgroundColor,
+                footerColor: emailFooter.style.backgroundColor,
+                bodyContent: emailInnerContainer.innerHTML, // Save the inner container's content
+                // Save the final aligned positions for thumbnail
+                finalHeaderLeft: emailHeader.style.left,
+                finalFooterLeft: emailFooter.style.left
+            });
+
+            // Reset for next email
+            headerAligned = false;
+            footerAligned = false;
+            currentPart = 'header';
+            // Reset default colors
+            emailHeader.style.backgroundColor = '#cbd5e0'; // Reset header color to default light gray
+            emailFooter.style.backgroundColor = '#cbd5e0'; // Reset footer color to default light gray
+            emailFooter.style.visibility = 'hidden'; // Hide footer for the next email
+
+            // Reset positions randomly within bounds
+            const containerWidth = emailDisplay.offsetWidth;
+            const headerWidth = emailHeader.offsetWidth;
+            const footerWidth = emailFooter.offsetWidth;
+            const maxHeaderPosition = containerWidth - headerWidth;
+            const maxFooterPosition = containerWidth - footerWidth;
+
+            headerPosition = Math.random() * maxHeaderPosition;
+            footerPosition = Math.random() * maxFooterPosition;
+
+            // Ensure elements are positioned before the next animation frame
+            emailHeader.style.left = headerPosition + 'px';
+            emailFooter.style.left = footerPosition + 'px';
+
+
+            // Reset directions randomly
+            headerDirection = Math.random() > 0.5 ? 1 : -1;
+            footerDirection = Math.random() > 0.5 ? 1 : -1;
+
+            // Increase speed
+            oscillationSpeed += speedIncreaseRate;
+
+            // Update email body content
+            updateEmailBody();
+        }
+
+        // Function to end the game
+        function endGame() {
+            cancelAnimationFrame(animationFrameId);
+            clearInterval(timerInterval);
+
+            gameArea.classList.remove('active');
+            endScreen.classList.add('active');
+
+            finalScoreDisplay.textContent = `Final Score: ${score}`;
+            rankDisplay.textContent = `Rank: ${getRank(score)}`;
+
+            // Display completed email thumbnails
+            completedEmailsPreview.innerHTML = ''; // Clear previous
+            completedEmails.forEach(email => {
+                const thumbnail = document.createElement('div');
+                thumbnail.classList.add('completed-email-thumbnail');
+                // Recreate the structure and apply saved styles/content
+                 // Use the same width as the main game parts for consistency in thumbnail
+                thumbnail.innerHTML = `
+                    <div class="email-part" style="background-color: ${email.headerColor}; left: ${email.finalHeaderLeft}; top: 0; height: 20px; font-size: 0.5em; width: 600px;"></div>
+                    <div class="email-inner-container" style="max-width: 90%; padding: 5px; margin: 0; font-size: 0.4em; line-height: 1.2; overflow: hidden;">${email.bodyContent}</div>
+                    <div class="email-part" style="background-color: ${email.footerColor}; left: ${email.finalFooterLeft}; bottom: 0; top: auto; height: 20px; font-size: 0.5em; width: 600px;"></div>
+                `;
+                completedEmailsPreview.appendChild(thumbnail);
+            });
+        }
+
+        // Function to determine rank based on score
+        function getRank(finalScore) {
+            if (finalScore >= 4000) { // Adjusted thresholds based on new scoring
+                return "Email Marketing Jesus";
+            } else if (finalScore >= 2800) {
+                return "Master Aligner";
+            } else if (finalScore >= 1800) {
+                return "Pro Marketer";
+            } else if (finalScore >= 800) {
+                return "Junior Aligner";
+            } else {
+                return "Rookie";
+            }
+        }
+
+        // Function to reset and start the game
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            oscillationSpeed = 3; // Reset speed
+            speedIncreaseRate = 0.15; // Reset speed increase rate
+            headerAligned = false;
+            footerAligned = false;
+            currentPart = 'header';
+            completedEmails = [];
+
+            scoreDisplay.textContent = `Score: ${score}`;
+            timerDisplay.textContent = `Time: ${timeLeft}`;
+
+            // Reset default colors
+            emailHeader.style.backgroundColor = '#cbd5e0'; // Reset header color to default light gray
+            emailFooter.style.backgroundColor = '#cbd5e0'; // Reset footer color to default light gray
+            emailFooter.style.visibility = 'hidden'; // Ensure footer is hidden at start
+
+             // Initial random positions
+            const containerWidth = emailDisplay.offsetWidth;
+            const headerWidth = emailHeader.offsetWidth;
+            const footerWidth = emailFooter.offsetWidth;
+            const maxHeaderPosition = containerWidth - headerWidth;
+            const maxFooterPosition = containerWidth - footerWidth;
+
+            headerPosition = Math.random() * maxHeaderPosition;
+            footerPosition = Math.random() * maxFooterPosition;
+
+            emailHeader.style.left = headerPosition + 'px';
+            emailFooter.style.left = footerPosition + 'px';
+
+
+            updateEmailBody(); // Load initial email body
+
+            startMenu.classList.remove('active');
+            endScreen.classList.remove('active');
+            gameArea.classList.add('active');
+
+            // Start timer
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `Time: ${timeLeft}`;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // Start animation
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+        tapButton.addEventListener('click', attemptAlign);
+
+        // Keyboard control
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                event.preventDefault(); // Prevent default spacebar behavior (scrolling)
+                // Check if the start menu is active
+                if (startMenu.classList.contains('active')) {
+                    startGame(); // Start the game if on the start screen
+                } else if (gameArea.classList.contains('active')) {
+                    attemptAlign(); // Only attempt alignment if the game is active
+                }
+            }
+        });
+
+        // Initial setup: Show start menu
+        startMenu.classList.add('active');
+
+    </script>
+</body>
+</html>
